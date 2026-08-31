@@ -8,6 +8,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## Features
 * Added opt-in CRAP analysis for GDScript methods, including executable-line coverage, complexity scoring, console and JSON reports, editor/CLI configuration, and an optional CI threshold gate.
 
+## Bug Fixes
+* Fixed CRAP probe insertion for typed `for` loop variables by targeting the suite colon instead of the type annotation colon.
+
 
 
 # 9.7.1

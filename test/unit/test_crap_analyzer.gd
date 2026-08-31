@@ -101,6 +101,7 @@ func test_explicit_directories_are_recursive_deduplicated_and_excludable():
 			"res://test/resources/crap/language/*",
 			"res://test/resources/crap/lifecycle/*",
 			"res://test/resources/crap/shapes/*",
+			"res://test/resources/crap/typed_for/*",
 		],
 	})
 	var report = analyzer.finish()
@@ -152,6 +153,23 @@ func test_multiline_signatures_inline_bodies_and_inner_classes_keep_their_shape(
 	assert_eq(returns_lambda.complexity, 1)
 	assert_eq(returns_lambda.executable_line_count, 1)
 	assert_eq(returns_lambda.covered_line_count, 1)
+
+
+func test_typed_for_loop_is_instrumented_after_the_suite_colon():
+	var analyzer = CrapAnalyzer.new()
+	analyzer.prepare({"dirs": ["res://test/resources/crap/typed_for"]})
+	analyzer.begin()
+
+	var Subject = load("res://test/resources/crap/typed_for/typed_for_subject.gd")
+	assert_eq(Subject.new().sum_values(), 3)
+
+	var report = analyzer.finish()
+	var method = find_method(report, "sum_values")
+	assert_eq(report.status, "complete")
+	assert_eq(report.summary.files, 1)
+	assert_eq(method.executable_line_count, 3)
+	assert_eq(method.covered_line_count, 3)
+	assert_eq(method.uncovered_lines, [])
 
 
 func test_no_source_directories_disables_analysis_without_failing_the_run():

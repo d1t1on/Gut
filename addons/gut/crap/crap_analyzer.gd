@@ -238,10 +238,11 @@ func _complexity(body_lines: Array) -> int:
 	return result
 
 
-func _top_level_colon(text: String) -> int:
+func _top_level_colon(text: String, find_last := false) -> int:
 	var parentheses = 0
 	var brackets = 0
 	var braces = 0
+	var result = -1
 	for index in range(text.length()):
 		var character = text[index]
 		if(character == "("):
@@ -257,12 +258,14 @@ func _top_level_colon(text: String) -> int:
 		elif(character == "}"):
 			braces = max(braces - 1, 0)
 		elif(character == ":" and parentheses == 0 and brackets == 0 and braces == 0):
-			return index
-	return -1
+			result = index
+			if(!find_last):
+				return result
+	return result
 
 
 func _inline_body(stripped: String) -> String:
-	var colon = _top_level_colon(stripped)
+	var colon = _top_level_colon(stripped, true)
 	if(colon == -1):
 		return ""
 	return stripped.substr(colon + 1).strip_edges()
@@ -617,7 +620,7 @@ func _instrument_source(path: String, source: String, source_methods: Array, scr
 			continue
 		var original = str(lines[index])
 		if(inline_injection_lookup.has(line_number)):
-			var colon = _top_level_colon(str(sanitized[index]))
+			var colon = _top_level_colon(str(sanitized[index]), true)
 			if(colon != -1):
 				lines[index] = original.substr(0, colon + 1) + " " + PROBE_EXPRESSION % [script_id, line_number] + original.substr(colon + 1)
 				continue
