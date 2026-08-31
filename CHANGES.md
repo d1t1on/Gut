@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 
+# Unreleased
+
+## Features
+* Added opt-in CRAP analysis for GDScript methods, including executable-line coverage, complexity scoring, console and JSON reports, editor/CLI configuration, and an optional CI threshold gate.
+
+
+
 # 9.7.1
 
 ## Bug Fixes

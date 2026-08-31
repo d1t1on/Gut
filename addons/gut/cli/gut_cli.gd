@@ -122,6 +122,13 @@ an immediate "=":
 	opts.add('-gerrors_do_not_cause_failure', false, 'When an internal GUT error occurs tests will fail.  With this option set, that does not happen.')
 	opts.add('-gdouble_strategy', 'SCRIPT_ONLY', 'Default strategy to use when doubling.  Valid values are [INCLUDE_NATIVE, SCRIPT_ONLY].  Default "[default]"')
 
+	opts.add_heading("CRAP Analysis:")
+	opts.add('-gcrap_dir', options.crap_dirs, 'List of source directories to analyze recursively.  Omit to disable CRAP analysis.')
+	opts.add('-gcrap_exclude', options.crap_excludes, 'List of source paths or wildcard patterns to exclude from CRAP analysis.')
+	opts.add('-gcrap_threshold', options.crap_threshold, 'CRAP score threshold.  Default [default].')
+	opts.add('-gcrap_fail_on_threshold', options.crap_fail_on_threshold, 'Exit non-zero when any method reaches the CRAP threshold.')
+	opts.add('-gcrap_json_file', options.crap_json_file, 'Write the standalone CRAP JSON report to this path.')
+
 	opts.add_heading("Run Options:")
 	opts.add('-gselect', '', 'All scripts that contain the specified string in their filename will be ran')
 	opts.add('-ginner_class', '', 'Only run inner classes that contain the specified string in their name.')
@@ -167,6 +174,11 @@ an immediate "=":
 func extract_command_line_options(from, to):
 	to.compact_mode = from.get_value_or_null('-gcompact_mode')
 	to.config_file = from.get_value_or_null('-gconfig')
+	to.crap_dirs = from.get_value_or_null('-gcrap_dir')
+	to.crap_excludes = from.get_value_or_null('-gcrap_exclude')
+	to.crap_fail_on_threshold = from.get_value_or_null('-gcrap_fail_on_threshold')
+	to.crap_json_file = from.get_value_or_null('-gcrap_json_file')
+	to.crap_threshold = from.get_value_or_null('-gcrap_threshold')
 	to.dirs = from.get_value_or_null('-gdir')
 	to.disable_colors =  from.get_value_or_null('-gdisable_colors')
 	to.double_strategy = from.get_value_or_null('-gdouble_strategy')

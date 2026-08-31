@@ -16,7 +16,7 @@ godot -d -s --path "$PWD" addons/gut/gut_cmdln.gd
 
 The `-d` option tells Godot to run in debug mode which is helpful.  The `-s` option tells Godot to run a script. `--path "$PWD"` tells Godot to treat the current directory as the root of a project.
 
-When running from command line, `0` will be returned if all tests pass and `1` will be returned if any fail (`pending` doesn't affect the return value).
+When running from command line, `0` will be returned if all tests pass and `1` will be returned if any fail (`pending` doesn't affect the return value).  An incomplete [CRAP analysis](CRAP-Analysis), or an enabled CRAP threshold gate with violations, also returns `1`.
 
 ## Options
 _Output from the command line help via `-gh` option_
@@ -68,6 +68,13 @@ Test Config:
                                   set, that does not happen.
   -gdouble_strategy               Default strategy to use when doubling.  Valid values are [INCLUDE_NATIVE,
                                   SCRIPT_ONLY].  Default "SCRIPT_ONLY"
+
+CRAP Analysis:
+  -gcrap_dir                      List of source directories to analyze recursively.  Omit to disable CRAP analysis.
+  -gcrap_exclude                  List of source paths or wildcard patterns to exclude from CRAP analysis.
+  -gcrap_threshold                CRAP score threshold.  Default 30.0.
+  -gcrap_fail_on_threshold        Exit non-zero when any method reaches the CRAP threshold.
+  -gcrap_json_file                Write the standalone CRAP JSON report to this path.
 
 Run Options:
   -gselect                        All scripts that contain the specified string in their filename will be ran
@@ -121,6 +128,17 @@ Load all test scripts that begin with 'me_' and end in '.res' and run me_only_on
 godot -s addons/gut/gut_cmdln.gd -d --path "$PWD" -gdir=res://test/unit -gprefix=me_ -gsuffix=.res -gselect=only_me
 ```
 
+Analyze application scripts, write a standalone report, and fail CI when any
+method has a CRAP score of at least 30:
+
+```bash
+godot -s addons/gut/gut_cmdln.gd --headless --path "$PWD" \
+  -gdir=res://test/unit -ginclude_subdirs -gexit \
+  -gcrap_dir=res://src '-gcrap_exclude=res://src/generated/*' \
+  -gcrap_threshold=30.0 -gcrap_fail_on_threshold \
+  -gcrap_json_file=user://crap-report.json
+```
+
 ## Config file
 To cut down on the amount of arguments you have to pass to gut and to make it easier to change them, you can optionally use a json file to specify some of the values.  By default `gut_cmdln` looks for a config file at `res://.gutconfig.json`.  You can specify a different file using the `-gconfig` option.
 
@@ -129,6 +147,11 @@ Here is a sample file.  You can print out the text for a gutconfig file using th
 ``` json
 {
   "dirs":["res://test/unit/","res://test/integration/"],
+  "crap_dirs":["res://src"],
+  "crap_excludes":["res://src/generated/*"],
+  "crap_threshold":30.0,
+  "crap_fail_on_threshold":false,
+  "crap_json_file":"user://crap-report.json",
   "double_strategy":"partial",
   "ignore_pause":false,
   "include_subdirs":true,

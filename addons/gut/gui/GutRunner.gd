@@ -95,29 +95,42 @@ func _write_results_for_gut_panel():
 	_wrote_results = true
 
 
+func resolve_exit_code(override_exit_code, fail_count, post_hook_exit_code, crap_failed):
+	var exit_code = GutUtils.nvl(override_exit_code, EXIT_OK)
+	if(fail_count > 0):
+		exit_code = EXIT_ERROR
+	if(post_hook_exit_code != null):
+		exit_code = post_hook_exit_code
+	if(crap_failed and exit_code == EXIT_OK):
+		exit_code = EXIT_ERROR
+	return exit_code
+
+
 func _handle_quit(should_exit, should_exit_on_success, override_exit_code=EXIT_OK):
+	var crap_failed = gut.crap_should_fail()
 	var quitting_time = should_exit or \
-		(should_exit_on_success and gut.get_fail_count() == 0) or \
+		(should_exit_on_success and gut.get_fail_count() == 0 and !crap_failed) or \
 		GutUtils.is_headless()
 
 	if(!quitting_time):
 		if(should_exit_on_success):
-			lgr.log("There are failing tests, exit manually.")
+			if(crap_failed):
+				lgr.log("CRAP analysis requires a failing exit code; exit manually.")
+			else:
+				lgr.log("There are failing tests, exit manually.")
 		_gui.use_compact_mode(false)
 		return
 
-	# For some reason, tests fail asserting that quit was called with 0 if we
-	# do not do this, but everything is defaulted so I don't know why it gets
-	# null.
-	var exit_code = GutUtils.nvl(override_exit_code, EXIT_OK)
-
-	if(gut.get_fail_count() > 0):
-		exit_code = EXIT_ERROR
-
-	# Overwrite the exit code with the post_script's exit code if it is set
 	var post_hook_inst = gut.get_post_run_script_instance()
+	var post_hook_exit_code = null
 	if(post_hook_inst != null and post_hook_inst.get_exit_code() != null):
-		exit_code = post_hook_inst.get_exit_code()
+		post_hook_exit_code = post_hook_inst.get_exit_code()
+
+	var exit_code = resolve_exit_code(
+		override_exit_code,
+		gut.get_fail_count(),
+		post_hook_exit_code,
+		crap_failed)
 
 	quit(exit_code)
 
