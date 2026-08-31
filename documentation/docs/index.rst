@@ -46,6 +46,7 @@
    :name: sec-other
 
    Export-Test-Results
+   CRAP-Analysis
    Hooks
    Global-Lifecycle-Hooks
    Memory-Management
@@ -68,14 +69,12 @@
 
 
 
-Gut 9.6.1 (Godot 4.6)
+Gut 9.7.1 (Godot 4.7)
 =========
 
 
 GUT/Godot Versions
 ------------------
-There are only two versions of GUT in the Asset Library.  GUT 9 requires Godot 4.  GUT 7 requires Godot 3.4.  GUT will not appear in the Asset Library if your current version of Godot is less than GUT's required version.
-
 The Godot/GUT version list and download links can be found in the repo README https://github.com/bitwes/Gut/blob/main/README.md
 
 
@@ -101,6 +100,7 @@ Advanced Testing
 * :doc:`Coroutines and await in tests <Awaiting>`
 * :doc:`Pre/Post Run Hooks <Hooks>`
 * :doc:`Exporting Results <Export-Test-Results>`
+* :doc:`CRAP Analysis <CRAP-Analysis>`
 * :doc:`Error Tracking <Error-Tracking>`
 
 
@@ -145,4 +145,3 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`search`
-

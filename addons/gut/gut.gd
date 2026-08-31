@@ -21,6 +21,7 @@ const LOG_LEVEL_ALL_ASSERTS = 2
 const WAITING_MESSAGE = '/# waiting #/'
 const PAUSE_MESSAGE = '/# Pausing.  Press continue button...#/'
 const COMPLETED = 'completed'
+const CrapAnalyzer = preload("res://addons/gut/crap/crap_analyzer.gd")
 
 # ---------------------------
 # Signals
@@ -254,6 +255,9 @@ var _start_time = 0.0
 var _current_test = null
 var _pause_before_teardown = false
 
+var _crap_analyzer = null
+var _crap_report = {"status": "disabled"}
+
 
 # Used to cancel importing scripts if an error has occurred in the setup.  This
 # prevents tests from being run if they were exported and ensures that the
@@ -465,15 +469,75 @@ func _init_run():
 	return valid
 
 
+func _begin_crap_analysis():
+	if(_crap_analyzer != null):
+		_crap_analyzer.begin()
+
+
+func _finish_crap_analysis():
+	if(_crap_analyzer == null):
+		_crap_report = {"status": "disabled"}
+	else:
+		_crap_report = _crap_analyzer.finish()
+
+
+func _log_crap_report():
+	if(_crap_report.get("status", "disabled") == "disabled"):
+		return
+
+	_lgr.log("\nCRAP Analysis", _lgr.fmts.underline)
+	if(_crap_report.status == "incomplete"):
+		_lgr.error("CRAP analysis is incomplete; the process will fail.")
+		for diagnostic in _crap_report.diagnostics:
+			_lgr.error(str(
+				diagnostic.code, ": ", diagnostic.message,
+				" [", diagnostic.path,
+				":" + str(diagnostic.line) if diagnostic.line > 0 else "",
+				"]"))
+	else:
+		var report_summary = _crap_report.summary
+		_lgr.log(str(
+			"Files ", report_summary.files,
+			", methods ", report_summary.methods,
+			", coverage ", "%.1f%%" % report_summary.coverage_percent,
+			", violations ", report_summary.violations,
+			", threshold ", _crap_report.metric.threshold))
+
+	var method_count = min(20, _crap_report.get("methods", []).size())
+	if(method_count > 0):
+		_lgr.log("Highest CRAP scores (up to 20):")
+	for index in range(method_count):
+		var method = _crap_report.methods[index]
+		_lgr.log("  %7.3f  %5.1f%%  CC=%d  %s:%d  %s.%s" % [
+			method.crap,
+			method.coverage_percent,
+			method.complexity,
+			method.path,
+			method.start_line,
+			method.class_name,
+			method.method_name,
+		])
+
+
+func _emit_early_end_run():
+	_finish_crap_analysis()
+	_log_crap_report()
+	_is_running = false
+	_export_results()
+	end_run.emit()
+
+
 # ------------------------------------------------------------------------------
 # Print out run information and close out the run.
 # ------------------------------------------------------------------------------
 func _end_run():
+	_finish_crap_analysis()
 	await _run_hook_script(get_post_run_script_instance())
 
 	_orphan_counter.record_orphans("end_run")
 	_orphan_counter.orphanage.clean()
 	_log_end_run()
+	_log_crap_report()
 	_is_running = false
 
 	_export_results()
@@ -757,12 +821,14 @@ func _test_the_scripts(indexes=[]):
 	var is_valid = _init_run()
 	if(!is_valid):
 		_lgr.error('Something went wrong and the run was aborted.')
+		_emit_early_end_run()
 		return
 
+	_begin_crap_analysis()
 	await _run_hook_script(get_pre_run_script_instance())
 	if(_pre_run_script_instance!= null and _pre_run_script_instance.should_abort()):
 		_lgr.error('pre-run abort')
-		end_run.emit()
+		_emit_early_end_run()
 		return
 
 	start_run.emit()
@@ -1040,7 +1106,7 @@ func test_scripts(_run_rest=false):
 			_lgr.error(str(
 				"Could not find script matching '", _script_name, "'.\n",
 				"Check your directory settings and Script Prefix/Suffix settings."))
-			end_run.emit()
+			_emit_early_end_run()
 		else:
 			_test_the_scripts(indexes)
 	else:
@@ -1049,6 +1115,28 @@ func test_scripts(_run_rest=false):
 # alias
 func run_tests(run_rest=false):
 	test_scripts(run_rest)
+
+
+## Configures CRAP analysis.  An empty [code]dirs[/code] array disables it.
+## This must be called before test scripts are collected so source scripts can
+## be instrumented before tests load them.
+func configure_crap_analysis(options: Dictionary):
+	if(_crap_analyzer == null):
+		_crap_analyzer = CrapAnalyzer.new()
+	_crap_analyzer.prepare(options)
+	_crap_report = {"status": "disabled"} if options.get("dirs", []).is_empty() else {"status": "collecting"}
+
+
+## Returns the versioned CRAP report.  It is complete by the post-run hook.
+func get_crap_report() -> Dictionary:
+	if(_crap_analyzer == null):
+		return {"status": "disabled"}
+	return _crap_report.duplicate(true)
+
+
+## Returns whether CRAP analysis requires a non-zero process exit code.
+func crap_should_fail() -> bool:
+	return _crap_analyzer != null and _crap_analyzer.should_fail()
 
 
 # ------------------------------------------------------------------------------

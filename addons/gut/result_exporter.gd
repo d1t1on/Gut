@@ -97,6 +97,10 @@ func get_results_dictionary(gut, include_scripts=true):
 
 	result.test_scripts.scripts = scripts
 
+	var crap_report = gut.get_crap_report()
+	if(crap_report.get("status", "disabled") != "disabled"):
+		result.crap_analysis = crap_report
+
 	return result
 
 

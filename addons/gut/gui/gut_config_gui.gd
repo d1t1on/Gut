@@ -2,6 +2,7 @@ var PanelControls = load("res://addons/gut/gui/panel_controls.gd")
 var GutConfig = load('res://addons/gut/gut_config.gd')
 
 const DIRS_TO_LIST = 6
+const CRAP_DIRS_TO_LIST = 6
 
 # specific titles that we need to do stuff with
 var _titles = {
@@ -37,6 +38,15 @@ func _on_save_path_chosen(path):
 func _on_load_path_chosen(path):
 	load_file.bind(path).call_deferred()
 
+
+func _nonempty_lines(text: String) -> Array:
+	var result = []
+	for line in text.split("\n"):
+		var value = str(line).strip_edges()
+		if(value != ""):
+			result.append(value)
+	return result
+
 # ------------------
 # Public
 # ------------------
@@ -62,6 +72,15 @@ func get_config_issues():
 		_titles.dirs.mark_invalid(true)
 	else:
 		_titles.dirs.mark_invalid(false)
+
+	for i in range(CRAP_DIRS_TO_LIST):
+		var crap_key = str('crap_directory_', i)
+		var crap_path = _cfg_ctrls[crap_key].value
+		if(crap_path != null and crap_path != '' and !DirAccess.dir_exists_absolute(crap_path)):
+			_cfg_ctrls[crap_key].mark_invalid(true)
+			to_return.append(str('CRAP source directory ', crap_path, ' does not exist.'))
+		else:
+			_cfg_ctrls[crap_key].mark_invalid(false)
 
 	if(!_cfg_ctrls.suffix.value.ends_with('.gd')):
 		_cfg_ctrls.suffix.mark_invalid(true)
@@ -186,6 +205,24 @@ func set_options(opts):
 		test_dir.enabled_button.button_pressed = options.dirs.has(value)
 
 
+	opt_maker.add_title('CRAP Analysis')
+	opt_maker.add_blurb('Analyze GDScript complexity and executable-line coverage.  Leave all source directories empty to disable it.')
+	for i in range(CRAP_DIRS_TO_LIST):
+		var crap_value = ''
+		if(options.crap_dirs.size() > i):
+			crap_value = options.crap_dirs[i]
+		opt_maker.add_directory(str('crap_directory_', i), crap_value, str(i),
+			'Source directory to analyze recursively.')
+	opt_maker.add_multiline_text('crap_excludes', "\n".join(options.crap_excludes), 'Excludes',
+		'One excluded path or wildcard pattern per line.')
+	opt_maker.add_float('crap_threshold', options.crap_threshold, 'Threshold', 0.1, 0.0, 999999.0,
+		'Methods with a CRAP score at or above this value are violations.')
+	opt_maker.add_boolean('crap_fail_on_threshold', options.crap_fail_on_threshold, 'Fail on Threshold',
+		'Use a non-zero process exit code when any method violates the threshold.')
+	opt_maker.add_save_file_anywhere('crap_json_file', options.crap_json_file, 'JSON Output',
+		'Optional path for a standalone versioned CRAP JSON report.')
+
+
 	opt_maker.add_title("XML Output")
 	opt_maker.add_save_file_anywhere("junit_xml_file", options.junit_xml_file, "Output Path",
 		"Path and filename where GUT should create a JUnit compliant XML file.  " +
@@ -261,6 +298,18 @@ func get_options(base_opts):
 				dirs.append(ctrl.value)
 	to_return.dirs = dirs
 	to_return.configured_dirs = configured_dirs
+
+	# CRAP Analysis
+	var crap_dirs = []
+	for i in range(CRAP_DIRS_TO_LIST):
+		var crap_value = _cfg_ctrls[str('crap_directory_', i)].value
+		if(crap_value != '' and crap_value != null):
+			crap_dirs.append(crap_value)
+	to_return.crap_dirs = crap_dirs
+	to_return.crap_excludes = _nonempty_lines(_cfg_ctrls.crap_excludes.value)
+	to_return.crap_threshold = _cfg_ctrls.crap_threshold.value
+	to_return.crap_fail_on_threshold = _cfg_ctrls.crap_fail_on_threshold.value
+	to_return.crap_json_file = _cfg_ctrls.crap_json_file.value
 
 	# XML Output
 	to_return.junit_xml_file = _cfg_ctrls.junit_xml_file.value
