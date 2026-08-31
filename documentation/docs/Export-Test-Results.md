@@ -2,6 +2,12 @@
 
 You can export test results in the JUnit XML format specified [here](https://llg.cubic.org/docs/junit/).  You can specify a file name to export to, or kick off an export in a [post-run hook](Hooks).
 
+When [CRAP analysis](CRAP-Analysis) is enabled, GUT's JSON result dictionary
+also contains a versioned `crap_analysis` entry.  This entry is omitted when
+analysis is disabled, preserving the existing JSON schema for normal runs.  To
+write only the CRAP report, set `crap_json_file` in `.gutconfig.json` or pass
+`-gcrap_json_file` on the command line.
+
 ## Setting the export file
 There are two settings, the file name and a flag to include an epoch timestamp in the filename.  The epoch timestamp will prevent runs from overwriting the last run's file.
 

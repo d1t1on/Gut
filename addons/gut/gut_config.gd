@@ -21,6 +21,11 @@ var default_options = {
 	# used by editor to handle enabled/disabled dirs.  All dirs configured go
 	# here and only the enabled dirs go into dirs
 	configured_dirs = [],
+	crap_dirs = [],
+	crap_excludes = [],
+	crap_fail_on_threshold = false,
+	crap_json_file = '',
+	crap_threshold = 30.0,
 	dirs = [],
 	disable_colors = false,
 	# double strategy can be the name of the enum value, the enum value or
@@ -122,6 +127,21 @@ func _apply_options(opts, gut):
 		if(opts.has(entry)):
 			# Use gut.logger instead of our own for testing purposes.
 			logger.deprecated(str('Config value "', entry, '" is deprecated.  ', _deprecated_values[entry]))
+
+	var crap_hard_excludes = ["res://addons/gut"]
+	crap_hard_excludes.append_array(opts.dirs)
+	crap_hard_excludes.append_array(opts.tests)
+	for hook_path in [opts.pre_run_script, opts.post_run_script]:
+		if(hook_path != null and hook_path != ""):
+			crap_hard_excludes.append(hook_path)
+	gut.configure_crap_analysis({
+		"dirs": opts.crap_dirs,
+		"excludes": opts.crap_excludes,
+		"hard_excludes": crap_hard_excludes,
+		"threshold": opts.crap_threshold,
+		"fail_on_threshold": opts.crap_fail_on_threshold,
+		"json_file": opts.crap_json_file,
+	})
 
 	gut.include_subdirectories = opts.include_subdirs
 

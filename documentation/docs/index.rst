@@ -46,6 +46,7 @@
    :name: sec-other
 
    Export-Test-Results
+   CRAP-Analysis
    Hooks
    Global-Lifecycle-Hooks
    Memory-Management
@@ -99,6 +100,7 @@ Advanced Testing
 * :doc:`Coroutines and await in tests <Awaiting>`
 * :doc:`Pre/Post Run Hooks <Hooks>`
 * :doc:`Exporting Results <Export-Test-Results>`
+* :doc:`CRAP Analysis <CRAP-Analysis>`
 * :doc:`Error Tracking <Error-Tracking>`
 
 
@@ -143,4 +145,3 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`search`
-
